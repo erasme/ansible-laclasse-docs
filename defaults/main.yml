@@ -26,11 +26,6 @@ laclasse_slack:
   channel: none
   token: none
 
-# No defaults for this one, you need to define it
-# laclasse_redis_server: redis.example.org
-laclasse_redis_port: 6379
-laclasse_redis_root: false
-
 ## Services needed by DOCS
 laclasse_services:
   annuaire:

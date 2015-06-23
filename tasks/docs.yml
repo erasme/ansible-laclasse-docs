@@ -80,7 +80,6 @@
   when: bundle_required|changed
   notify: Restart laclasse-docs
 
-
 - name: Adds version.json
   sudo_user: "{{ laclasse_docs_deploy_user }}"
   sudo: true
