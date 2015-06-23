@@ -1,0 +1,33 @@
+# Liste des constantes de l'application DOCS
+STORAGE_ROOT = '{{ laclasse_docs_storage_path}}'
+STORAGE_ROOT_USERS = File.join(STORAGE_ROOT, 'users')
+STORAGE_ROOT_ETABS = File.join(STORAGE_ROOT, 'etablissements')
+STORAGE_ROOT_GPLS = File.join(STORAGE_ROOT, 'groupes_libres')
+
+# repertoire de stockage des vignettes de l'utilisateur, dans son cartable.
+# Ce repertoire est invisible depuis le client.
+# Un meme repertoire est cree a la racine de l'espace de partage.
+THUMBNAILS_DIR = '.tmb'
+TEMP_DIRECTORY = File.join(STORAGE_ROOT, "tmp")
+
+URL_REQUEST_TEST   = ""
+
+#taille maximum du fichier autorisé lors de l'upload
+UPLMAXSIZE = 52428800
+
+#version de l'ihm elfinder
+VERS_API_ELFINDER= "2.0"
+
+#option pour open init
+OPTION_INIT = 
+{
+  'archivers' => {
+    'create' => [
+      'application/zip',
+    ],
+    'extract' => [
+      'application/zip'
+    ]
+  },
+  'copyOverwrite' => 1
+}

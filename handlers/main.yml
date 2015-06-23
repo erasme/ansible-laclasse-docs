@@ -1,0 +1,9 @@
+- name: Restart laclasse-docs
+  service: name=laclasse-docs state=restarted
+  notify: Check laclasse-docs
+
+- name: Check laclasse-docs
+  wait_for: port={{laclasse_docs_port}} delay=5 timeout=10
+  register: check
+  changed_when: true
+

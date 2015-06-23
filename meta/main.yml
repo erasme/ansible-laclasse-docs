@@ -1,0 +1,7 @@
+dependencies:
+  - role: ansible-ruby-compiled
+    ruby_version: "{{ laclasse_docs_ruby_version }}"
+    ruby_default: "{{ laclasse_docs_ruby_version }}"
+    ruby_deploy_user: "{{ laclasse_docs_deploy_user }}"
+    when: '"{{ laclasse_docs_ruby_version }}" != "system"'
+  - role: ansible-etherpad

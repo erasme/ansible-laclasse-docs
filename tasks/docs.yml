@@ -1,0 +1,220 @@
+- debug: var=laclasse
+  tags: test
+
+- set_fact: database_delegate_hostname="{{ inventory_hostname }}"
+  when: "'{{ laclasse_docs_database.host }}' == 'localhost'"
+
+- set_fact: database_delegate_hostname="{{ laclasse_docs_database.host }}"
+  when: "'{{ laclasse_docs_database.host }}' != 'localhost'"
+
+- debug: msg="database_delegate_hostname set to {{database_delegate_hostname}}"
+  tags: test
+
+- set_fact: database_client_hostname="{{ inventory_hostname }}"
+  when: "'{{ laclasse_docs_database.host }}' != 'localhost'"
+
+- set_fact: database_client_hostname="localhost"
+  when: "'{{ laclasse_docs_database.host }}' == 'localhost'"
+
+# We need etherpad to be started to have the key generated
+# So since etherpad was probably installed few tasks before, we have to force
+# handlers to run
+- meta: flush_handlers
+  when: laclasse_docs_etherpad_host is defined
+  
+- name: Creates deploy user
+  user:
+    name: "{{ laclasse_docs_deploy_user }}"
+    comment: "Service docs user"
+  notify: Restart laclasse-docs
+
+- name: Creates deploy directory
+  file:
+    path: "~{{ laclasse_docs_deploy_user }}/laclasse-docs/"
+    owner: "{{ laclasse_docs_deploy_user }}"
+    state: directory
+  notify: Restart laclasse-docs
+
+- name: Checkout app
+  sudo_user: "{{ laclasse_docs_deploy_user }}"
+  sudo: true
+  git:
+    repo: "{{ laclasse_docs_repos }}"
+    dest: "~{{ laclasse_docs_deploy_user }}/laclasse-docs/"
+    version: "{{ laclasse_docs_version }}"
+    accept_hostkey: true
+    force: true
+  register: new_version
+  tags: wtf
+  notify: Restart laclasse-docs
+
+- name: Gets current tag
+  shell: cd ~{{ laclasse_docs_deploy_user }}/laclasse-docs/ && git describe --always --tag
+  changed_when: false
+  register: git_tag
+
+- debug: var=git_tag.stdout
+
+- name: Installs necessary prereqs
+  apt: pkg={{ item }} state=latest
+  with_items: laclasse_docs_packages
+  notify: Restart laclasse-docs
+
+- name: Check if a bundle is required
+  sudo_user: "{{ laclasse_docs_deploy_user }}"
+  sudo: true
+  shell: cd ~{{ laclasse_docs_deploy_user }}/laclasse-docs/; bash -lc 'bundle check --no-color --path ~/bundler_shared/ || true'
+  changed_when: bundle_required.stdout != "The Gemfile's dependencies are satisfied"
+  register: bundle_required
+
+- name: Bundles pack application
+  sudo_user: "{{ laclasse_docs_deploy_user }}"
+  sudo: true
+  shell: cd ~{{ laclasse_docs_deploy_user }}/laclasse-docs/; bash -lc 'bundle pack --no-color --all --path  ~/bundler_shared/'
+  when: bundle_required|changed
+
+- name: Bundles application
+  sudo_user: "{{ laclasse_docs_deploy_user }}"
+  sudo: true
+  shell: cd ~{{ laclasse_docs_deploy_user }}/laclasse-docs/; bash -lc 'bundle --no-color --deployment --path  ~/bundler_shared/'
+  when: bundle_required|changed
+  notify: Restart laclasse-docs
+
+
+- name: Adds version.json
+  sudo_user: "{{ laclasse_docs_deploy_user }}"
+  sudo: true
+  template:
+    src="../templates/version.json.j2"
+    dest="~{{ laclasse_docs_deploy_user }}/laclasse-docs/public/version.json"
+
+- name: Retrieves remote etherpad API key
+  # APIKEY is generated at first start by Etherpad - Ensure etherpad was started !
+  command: cat ~{{ etherpad_deploy_user }}/etherpad/APIKEY.txt
+  register: etherpad_apikey
+  changed_when: false
+  delegate_to: "{{laclasse_docs_etherpad_host}}"
+  when: laclasse_docs_etherpad_host is defined
+
+- name: Retrieves local etherpad API key
+  # APIKEY is generated at first start by Etherpad - Ensure etherpad was started !
+  command: cat ~{{ etherpad_deploy_user }}/etherpad/APIKEY.txt
+  changed_when: false  
+  register: etherpad_apikey
+  when: laclasse_docs_etherpad_host is not defined
+
+- debug: var=etherpad_apikey
+
+- name: Adds application config
+  template: src="../templates/{{ item }}.j2"
+    dest="~{{ laclasse_docs_deploy_user }}/laclasse-docs/config/{{ item }}"
+    owner={{ laclasse_docs_deploy_user }}
+    group={{ laclasse_docs_deploy_user }}
+    mode=640
+  register: new_config
+  with_items:
+    - constants.rb
+    - database.rb
+    - options.rb
+    - common.rb
+    - puma.rb
+  notify: Restart laclasse-docs
+
+- name: Adds application static config
+  copy: src="../files/rights_config.rb"
+    dest="~{{ laclasse_docs_deploy_user }}/laclasse-docs/config/rights_config.rb"
+    owner={{ laclasse_docs_deploy_user }}
+    group={{ laclasse_docs_deploy_user }}
+    mode=640
+  register: new_config
+  notify: Restart laclasse-docs
+
+- name: Adds python-mysqldb
+  apt: pkg=python-mysqldb
+
+- name: Creates database
+  mysql_db: name={{ laclasse_docs_database.name }} state=present
+  delegate_to: "{{database_delegate_hostname}}"
+  register: db_created
+
+- name: Creates database user
+  mysql_user:
+    user="{{ laclasse_docs_database.user }}"
+    password="{{ laclasse_docs_database.password }}"
+    priv="{{ laclasse_docs_database.name }}.*:ALL"
+    host="{{ database_client_hostname }}"
+  delegate_to: "{{database_delegate_hostname}}"
+  register: dbuser_created
+
+- name: Check if a migration is required
+  sudo_user: "{{ laclasse_docs_deploy_user }}"
+  sudo: true
+  shell: cd ~{{ laclasse_docs_deploy_user }}/laclasse-docs/; bash -lc 'RACK_ENV={{ laclasse_environment }} bundle exec rake db:check'
+  register: migration_required
+  changed_when: false
+  failed_when: false
+
+- name: Migrates Database
+  sudo_user: "{{ laclasse_docs_deploy_user }}"
+  sudo: true
+  shell: cd ~{{ laclasse_docs_deploy_user }}/laclasse-docs/; bash -lc 'RACK_ENV={{ laclasse_environment }} bundle exec rake db:migrations'
+  when:  migration_required is defined and migration_required.rc != 0
+  notify: Restart laclasse-docs
+
+- name: Binstubs puma
+  sudo_user: "{{ laclasse_docs_deploy_user }}"
+  sudo: true
+  shell: cd ~{{ laclasse_docs_deploy_user }}/laclasse-docs/; bash -lc "bundle binstubs puma"
+  register: puma_has_been_binstubbed
+  changed_when: '"Skipped puma since it already exists" in puma_has_been_binstubbed'
+  notify: Restart laclasse-docs
+
+- name: Deploys init script
+  template: src="../templates/laclasse-docs.init.j2" dest=/etc/init.d/laclasse-docs mode=0770
+  notify: Restart laclasse-docs
+
+- name: Creates PID and log dirs
+  file: dest={{ item }}/laclasse-docs/
+    owner={{ laclasse_docs_deploy_user }}
+    group={{ laclasse_docs_deploy_user }}
+    mode=750
+    state=directory
+  with_items:
+    - "{{laclasse_log_parent_dir}}"
+  notify: Restart laclasse-docs
+
+- name: Registers init script
+  shell: update-rc.d laclasse-docs defaults
+  when: new_version|changed
+  notify: Restart laclasse-docs
+
+- name: Creates storage directory
+  file:
+    path={{ item }}
+    owner={{ laclasse_docs_deploy_user }}
+    state=directory
+  with_items:
+    - "{{ laclasse_docs_storage_path }}"
+    - "{{ laclasse_docs_storage_path }}/tmp"
+  notify: Restart laclasse-docs
+
+- name: Check if firewall is opened
+  shell: iptables-save
+  register: needs_iptables
+  changed_when: needs_iptables.stdout.find("laclasse-docs") == -1
+  when: laclasse_environment == 'production'
+
+- name: Open firewall
+  shell: iptables -A TCP_IN -p tcp -m tcp --dport {{ laclasse_docs_port}} -j ACCEPT -m comment --comment laclasse-docs
+  ignore_errors: true
+  when: needs_iptables | changed and laclasse_environment == 'production'
+
+- name: Open firewall
+  shell: iptables -A TCP_IN -p tcp -m tcp --dport {{ etherpad_port}} -j ACCEPT -m comment --comment laclasse-etherpad
+  ignore_errors: true
+  when: needs_iptables | changed and laclasse_environment == 'production'
+
+- name: Saves firewall
+  shell: iptables-save > {{ firewall.rules_file }}
+  when: needs_iptables | changed and laclasse_environment == 'production'
+

@@ -1,0 +1,87 @@
+# Generic parameters
+laclasse_environment: 'development'
+laclasse_log_parent_dir: /var/log
+laclasse_main_url: 'http://example.org'
+laclasse_pid_dir: /var/run/
+laclasse_puma_auth_token: somerandomtoken
+
+## Annuaire
+laclasse_annuaire_main_path: 'api'
+laclasse_annuaire_app_component: 'app'
+laclasse_annuaire_aaf_url: https://www.dev.example.org/annuaire
+
+## Logstash server parameters
+logstash_server: localhost
+logstash_udp_json_port: 1234
+
+# No defaults for this one, you need to define it
+laclasse_redis_server: false
+laclasse_redis_port: 6379
+# No defaults for this one, you need to define it
+laclasse_redis_root: false
+
+## Slack server
+laclasse_slack:
+  host: localhost
+  channel: none
+  token: none
+
+# No defaults for this one, you need to define it
+# laclasse_redis_server: redis.example.org
+laclasse_redis_port: 6379
+laclasse_redis_root: false
+
+## Services needed by DOCS
+laclasse_services:
+  annuaire:
+    api_key: ''
+    api_mode: ''
+    app_id: 'ANNUAIRE'
+    title: 'Annuaire'
+    description: 'Annuaire'
+    path: '/annuaire'
+  docs:
+    api_key: 'someapikey'
+    api_mode: 'v3'
+    app_id: 'DOC'
+    description: "Espace personnel de stockage, et espaces partagés."
+    path: '/docs'
+    title: 'Documents'
+  suiviperso:
+    api_key: ''
+    api_mode: ''
+    app_id: 'SUIVI'
+    description: "Suiviperso"
+    path: '/suivi'
+    title: 'Suivi perso'
+
+## SSO
+laclasse_sso_disable_ssl_verification: 'false'
+laclasse_sso_login_url: '/login'
+laclasse_sso_logout_url: '/logout'
+laclasse_sso_logout_saml: '/saml/logout'
+laclasse_sso_port: 443
+laclasse_sso_restmod_url: '/restmod'
+laclasse_sso_server: cas.example.org
+laclasse_sso_service_validate_url: '/service_validate'
+laclasse_sso_ssl: 'true'
+
+# DOCS paramaters
+laclasse_docs_deploy_user: 'user'
+laclasse_docs_port: 42560
+laclasse_docs_repos: 'https://github.com/laclasse-com/service-documents.git'
+laclasse_docs_ruby_version: '2.2.2'
+laclasse_docs_storage_path: '/var/lib/laclasse-docs/'
+laclasse_docs_version: 'develop'
+laclasse_docs_packages:
+  - libmysqlclient-dev
+  - imagemagick
+laclasse_docs_ssl_verify: false
+
+laclasse_docs_database: false
+# laclasse_docs_database:
+#   name: docs
+#   user: docs
+#   host: 'localhost'
+#   password: "pass"
+

@@ -1,0 +1,60 @@
+# -*- encoding: utf-8 -*-
+
+{% import 'macros/url.j2' as url with context %}
+
+#
+# Fichier de configuration de l'application
+#
+
+require 'logger'
+require 'base64'
+
+# development ou production
+ENV[ 'RACK_ENV' ]  = '{{ laclasse_environment }}'
+
+# niveau de log de l'application
+LOG_LEVEL = Logger::INFO
+
+# Chemin absolu de l'application sur le serveur
+APP_ROOT = File.expand_path(File.join(File.dirname(__FILE__), '..'))
+
+# Mapping HAProxy de l'application, ex : '/v3/docs'
+APP_PATH = '{{ laclasse_services.docs.path }}'
+
+# Langage par défaut de l'application
+LANG = 'fr'
+
+# Clé de hachage pour les cookies Rack
+SESSION_KEY = Base64.encode64(rand().to_s).chomp
+
+# Durée de la session en seconde (défaut 3600)
+SESSION_TIME = 3600
+
+# Url de l'ENT
+URL_ENT = '{{ laclasse_main_url }}'
+
+# nom du serveur d'annuaire ENT (xml-aaf académiques)
+SERVICE_ANNUAIRE_ENT = '{{ laclasse_annuaire_aaf_url }}'
+
+# SSL verification mode
+{% if laclasse_docs_ssl_verify %}
+SSL_VERIFY = OpenSSL::SSL::VERIFY_PEER
+{% else %}
+SSL_VERIFY = OpenSSL::SSL::VERIFY_NONE
+{% endif %}
+
+APP_AUTHORIZE = {
+  'SUIVIELV' => '{{ laclasse_services.suiviperso.api_key}}'
+}
+
+#
+# Configuration du service Etherpad
+#
+ETHERPAD = {
+  url: '{{ laclasse_main_url }}pads/',
+  api_key: '{{ etherpad_apikey.stdout }}',  
+  default_text: 'Vous etes a present sur etherpad. \n Celui-ci est un document collaboratif. \n'
+}
+
+
+

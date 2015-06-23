@@ -1,0 +1,18 @@
+#
+# Configuration de la base de données de Backend
+#
+# Generated automatically with "rake db:configure" command at 21/05/2013.
+#
+
+DB = Sequel.mysql2(
+    '{{ laclasse_docs_database.name }}',
+    :host=>'{{ laclasse_docs_database.host }}',
+    :user=>'{{ laclasse_docs_database.user }}',
+    :password=>'{{ laclasse_docs_database.password }}',
+    :charset=>'utf8')
+
+Sequel.extension(:pagination)
+Sequel.extension(:migration)
+
+#Uncomment this if you want to log all DB queries
+#DB.loggers << Logger.new($stdout)

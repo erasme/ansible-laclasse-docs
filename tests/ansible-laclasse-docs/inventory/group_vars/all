@@ -1,0 +1,21 @@
+# -*- mode: yaml; -*-
+# Change db credentials below
+laclasse_docs_database:
+  name: documents
+  user: docs
+  host: 'localhost'
+  password: "foobar"
+
+laclasse_docs_deploy_user: "{{ci_user}}"
+
+laclasse_redis_server: localhost
+laclasse_redis_root: "vagrant:docs"
+
+# Etherpad configuration
+etherpad_database:
+  name: etherpad
+  user: etherpad
+  host: localhost
+  password: "foobar"
+etherpad_deploy_user: "{{ci_user}}"
+etherpad_session_key: "abcdefghijklmnopqrstuvwxyz123456"
