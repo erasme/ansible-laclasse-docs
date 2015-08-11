@@ -211,9 +211,5 @@
 - name: Open firewall
   shell: iptables -A TCP_IN -p tcp -m tcp --dport {{ etherpad_port}} -j ACCEPT -m comment --comment laclasse-etherpad
   ignore_errors: true
-  when: needs_iptables | changed and laclasse_environment == 'production'
-
-- name: Saves firewall
-  shell: iptables-save > {{ firewall.rules_file }}
-  when: needs_iptables | changed and laclasse_environment == 'production'
+  when: needs_iptables | changed and laclasse_environment == 'production' and firewall is defined
 

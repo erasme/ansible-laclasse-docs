@@ -21,6 +21,9 @@ APP_ROOT = File.expand_path(File.join(File.dirname(__FILE__), '..'))
 # Mapping HAProxy de l'application, ex : '/v3/docs'
 APP_PATH = '{{ laclasse_services.docs.path }}'
 
+# Application version
+APP_VERSION = '{{ laclasse_docs_version }}'
+
 # Langage par défaut de l'application
 LANG = 'fr'
 
@@ -51,8 +54,8 @@ APP_AUTHORIZE = {
 # Configuration du service Etherpad
 #
 ETHERPAD = {
-  url: '{{ laclasse_main_url }}pads/',
-  api_key: '{{ etherpad_apikey.stdout }}',  
+  url: '{{ laclasse_main_url }}/pads/',
+  api_key: '{{ etherpad_apikey.stdout }}',
   default_text: 'Vous etes a present sur etherpad. \n Celui-ci est un document collaboratif. \n'
 }
 
