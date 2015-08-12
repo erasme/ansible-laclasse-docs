@@ -21,11 +21,11 @@
 # handlers to run
 - meta: flush_handlers
   when: laclasse_docs_etherpad_host is defined
-  
+
 - name: Creates deploy user
   user:
     name: "{{ laclasse_docs_deploy_user }}"
-    comment: "Service docs user"
+    comment: "laclasse user"
   notify: Restart laclasse-docs
 
 - name: Creates deploy directory
@@ -98,7 +98,7 @@
 - name: Retrieves local etherpad API key
   # APIKEY is generated at first start by Etherpad - Ensure etherpad was started !
   command: cat ~{{ etherpad_deploy_user }}/etherpad/APIKEY.txt
-  changed_when: false  
+  changed_when: false
   register: etherpad_apikey
   when: laclasse_docs_etherpad_host is not defined
 
@@ -169,7 +169,10 @@
   notify: Restart laclasse-docs
 
 - name: Deploys init script
-  template: src="../templates/laclasse-docs.init.j2" dest=/etc/init.d/laclasse-docs mode=0770
+  template:
+    src: "../templates/laclasse-docs.init.j2"
+    dest: /etc/init.d/laclasse-docs
+    mode: 0770
   notify: Restart laclasse-docs
 
 - name: Creates PID and log dirs
@@ -183,7 +186,10 @@
   notify: Restart laclasse-docs
 
 - name: Registers init script
-  shell: update-rc.d laclasse-docs defaults
+  service:
+    name: "laclasse-docs"
+    enabled: yes
+  #shell: update-rc.d laclasse-docs defaults
   when: new_version|changed
   notify: Restart laclasse-docs
 
@@ -201,15 +207,15 @@
   shell: iptables-save
   register: needs_iptables
   changed_when: needs_iptables.stdout.find("laclasse-docs") == -1
-  when: laclasse_environment == 'production'
+  when: laclasse_environment == 'production' and firewall is defined
 
 - name: Open firewall
   shell: iptables -A TCP_IN -p tcp -m tcp --dport {{ laclasse_docs_port}} -j ACCEPT -m comment --comment laclasse-docs
   ignore_errors: true
-  when: needs_iptables | changed and laclasse_environment == 'production'
+  when: needs_iptables | changed
 
 - name: Open firewall
   shell: iptables -A TCP_IN -p tcp -m tcp --dport {{ etherpad_port}} -j ACCEPT -m comment --comment laclasse-etherpad
   ignore_errors: true
-  when: needs_iptables | changed and laclasse_environment == 'production' and firewall is defined
+  when: needs_iptables | changed
 
