@@ -65,7 +65,7 @@ laclasse_sso_ssl: 'true'
 laclasse_docs_deploy_user: 'user'
 laclasse_docs_port: 42560
 laclasse_docs_repos: 'https://github.com/laclasse-com/service-documents.git'
-laclasse_docs_ruby_version: '2.2.2'
+laclasse_docs_ruby_version: "{{ laclasse_ruby_version | default('2.2.2')  }}"
 laclasse_docs_storage_path: '/var/lib/laclasse-docs/'
 laclasse_docs_version: 'develop'
 laclasse_docs_packages:
