@@ -51,6 +51,7 @@
 - name: Gets current tag
   shell: cd ~{{ laclasse_docs_deploy_user }}/laclasse-docs/ && git describe --always --tag
   changed_when: false
+  always_run: yes
   register: git_tag
 
 - debug: var=git_tag.stdout
@@ -99,6 +100,7 @@
   # APIKEY is generated at first start by Etherpad - Ensure etherpad was started !
   command: cat ~{{ etherpad_deploy_user }}/etherpad/APIKEY.txt
   changed_when: false
+  always_run: true
   register: etherpad_apikey
   when: laclasse_docs_etherpad_host is not defined
 
