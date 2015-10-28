@@ -136,6 +136,7 @@
 - name: Creates database
   mysql_db: name={{ laclasse_docs_database.name }} state=present
   delegate_to: "{{database_delegate_hostname}}"
+  when: not laclasse_skip_database
   register: db_created
 
 - name: Creates database user
@@ -144,6 +145,7 @@
     password="{{ laclasse_docs_database.password }}"
     priv="{{ laclasse_docs_database.name }}.*:ALL"
     host="{{ database_client_hostname }}"
+  when: not laclasse_skip_database
   delegate_to: "{{database_delegate_hostname}}"
   register: dbuser_created
 
